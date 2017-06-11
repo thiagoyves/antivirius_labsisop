@@ -1,4 +1,4 @@
-/*
+filestoanalyze/*
  ============================================================================
  Name        : gzip.c
  Author      : 
@@ -15,50 +15,76 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <pthread.h>
 
-void readFile(int fd);
+char* isgzip(char* buffer);
+char* readfile(char filename[30]);
+#define O_BINARY 0
 
 int main(int argc, char* argv[]) {
-	int file_descriptor;
+    char filename[30] = "";
+    int numberoffiles = 1, numbertoanalyze = 0;
+    char* filestoanalyze[30];
 
-    char *line = NULL;
-    size_t len = 1000;
-    ssize_t read = 0;
-    while (read != -1) {
-        puts("Insira o caminho para o arquivo: ");
-        read = getline(line, &len, stdin);
-        printf("Caminho digitado = %s", line);
+    while (strcmp(filename, "fim") != 0) {
+        printf("Insira o caminho para o arquivo número %d a ser lido (digite ''fim'' para parar a leitura): ", numberoffiles);
+        scanf("%30[^\n]%*c", &filename);
 
-        file_descriptor = open(line, O_RDONLY);
-        printf("fd content = %i", file_descriptor);
+        char* buffer = isgzip(readfile(filename));
 
-        readFile(file_descriptor);
-
-        //       res = read(file_descriptor, buffer, tam_buffer)
-
+        if(buffer != NULL){
+        	filestoanalyze[numbertoanalyze] = buffer;
+        	printf("\n\né gzip\n\n");
+        	numbertoanalyze++;
+       }
+        else {
+        	printf("\n\narquivo não éno formato gzip\n\n");
+        }
+        numberoffiles++;
     }
-    free(line);
-    return 0;
+
+    //nesse ponto todos os aruivos já forma lidos e serão madandos para as threads
+
+    printf("wadssadsadsadsadsadsa");
+
+    pthread_t threadh[sizeof(filestoanalyze)];
+
+    for(int i = 0; i < sizeof(filestoanalyze); i++){
+        if (pthread_create (&threadh[i], NULL, isgzip, (void *) filestoanalyze[i]) != 0){ //TODO colocar a função para a descompactação dos arquivos em gzip
+        	perror("erro na criação da thread %d, do arquivo $c"); //TODO falta colocar os parametros
+        }
+    }
 
 	return EXIT_SUCCESS;
 }
 
+char* isgzip(char* buffer){
+    const unsigned char header[] = {0x1F, 0x8B};
 
-void readFile(int fd) {
-    char buffer[2];
-    int bytes_read;
-    int k = 0;
-    do {
-        char t = 0;
-        bytes_read = read(fd, &t, 1);
-        buffer[k++] = t;
-        printf("%c", t);
-        if(t == '\n' && t == '\0') {
-            printf("%d", atoi(buffer));
-            for(int i=0; i<10; i++)
-                buffer[i]='\0';
-            k = 0;
-        }
+    if(memcmp(buffer, header, sizeof header) == 0){
+    	return *buffer;
     }
-    while (bytes_read != 0);
+    else{
+    	return NULL;
+    }
 }
+
+char* readfile(char filename[30]){
+    FILE *fileptr;
+    char *buffer;
+    long filelen;
+
+    fileptr = fopen(filename, "rb");
+    //fileptr = open("yourfile.txt", O_RDONLY | O_BINARY, 0);
+
+    fseek(fileptr, 0, SEEK_END);
+    filelen = ftell(fileptr);
+    rewind(fileptr);
+
+    buffer = (char *)malloc((filelen+1)*sizeof(char));
+    fread(buffer, filelen, 1, fileptr);
+    fclose(fileptr);
+
+    return buffer;
+}
+
