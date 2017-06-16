@@ -22,7 +22,8 @@
 
 int filedescriptor;
 int numberoffilesvirus;
-void* thread(char* file);
+char* buffer_file;
+void* thread(char* file, char* argv);
 char* isgzip(char* buffer);
 char* readfile(char filename[30]);
 void* containvirus(char* gzipfile ,char* virus_signature);
@@ -30,12 +31,21 @@ void* containvirus(char* gzipfile ,char* virus_signature);
 
 sem_t thread_lock;
 
+typedef struct infoThread {
+	pthread_t thread;
+	char file_name;
+
+} infoThread_t;
+
 int main(int argc, char* argv[]) {
     char filename[30] = "";
     int numberoffiles = 1, numbertoanalyze = 0;
     char* filestoanalyze[30];
-    int pipe_thread[2];
 	sem_init(&thread_lock, 0, 1);
+
+    if(argv[1] == NULL){
+    	perror("parametro com assinatura do virus esta vazio");
+    }
 
     while (strcmp(filename, "fim") != 0) {
         printf("Insira o caminho para o arquivo número %d a ser lido (digite ''fim'' para parar a leitura): ", numberoffiles);
@@ -47,13 +57,6 @@ int main(int argc, char* argv[]) {
         if(buffer != NULL){
         	filestoanalyze[numbertoanalyze] = buffer;
         	printf("\n\né gzip\n\n");
-
-        	//Call method which verifies if the gzip file contains virus signature
-//			if(argv[1] != NULL){
-//				containvirus(argv[1],filestoanalyze[numbertoanalyze]);
-//			}
-//
-
         	numbertoanalyze++;
        }
         else {
@@ -63,17 +66,24 @@ int main(int argc, char* argv[]) {
         numberoffiles++;
     }
 
-    //nesse ponto todos os aruivos já forma lidos e serão madandos para as threads
+    //nesse ponto todos os aruivos já forma lidos e aserão madandos para as threads
 
-    pthread_t threadh[sizeof(filestoanalyze)];
+    printf("antes da criacao do array thread");
+
+//    pthread_t threadh[sizeof(filestoanalyze)];
+
+    infoThread_t threadh[sizeof(filestoanalyze)];
+
+    printf("depois da criacao do array thread");
 
     for(int i = 0; i < sizeof(filestoanalyze); i++){
-        if (pthread_create (&threadh[i], NULL, isgzip, (void *) filestoanalyze[i]) != 0){
+        if (pthread_create (&threadh[i]->thread, NULL, isgzip, (void *) filestoanalyze[i]) != 0){
         	perror("erro na criação da thread %d, do arquivo $c"); //TODO falta colocar os parametros
         }
         else{
-
-
+        	&threadh[i]->file_name = ;
+        	printf("entrou para criar thread");
+        	thread(filestoanalyze[i], argv[1]);
         }
     }
 
@@ -112,32 +122,42 @@ char* readfile(char filename[30]){
 }
 
 void* containvirus(char* gzipfile ,char* virus_signature){
+
+
+	printf("entrou no metodo containvirus");
 	if(memmem(gzipfile, sizeof gzipfile, virus_signature, sizeof virus_signature) != NULL){
-		numberoffilesvirus++;
+		printf("assinatura do viruus encontrada");
+	}
+	else{
+		printf("virus nao encontrado");
 	}
 }
 
-void* thread(char* file) {
+void* thread(char* file, char* argv) {
 
 	//se for um arquivo gzip e precisar forkar
 	int pipe_thread[2];
 	int fd;
 
-	if (pipe(pipe_thread) == -1) //handle_error();
+	if (pipe(pipe_thread) == -1); //handle_error();
 	switch(fork()) {
 		case -1: perror("fork");
 		case 0:
+
+			printf("entrou no metodo thread case 0");
+
 			close(pipe_thread[0]);//fecha leitura npo filho
 			dup2(pipe_thread[1], STDOUT_FILENO); //seta o pipe de escrita para a saida padrao do processo filho, para não perder o tracking dps do exec
-			execlp(file, file, "-l", NULL);
+			pipe_thread[1] = file;
+			execlp(pipe_thread[1], pipe_thread[1], "-l", NULL);
+			buffer_file = pipe_thread[0];
+			containvirus(buffer_file, argv[1]);
 			break;
 		default:
 			close(pipe_thread[1]);// fecha escrita no pai
 			dup2(pipe_thread[0], filedescriptor);//seta a leitura do pipe no pai para algum descritor
 	}
-	else{
-		perror("pipe");
-	}
+
 
 	//tratar o que for recebido no descritor selecionado
 	//while(condition){
