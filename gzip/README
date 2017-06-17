@@ -5,5 +5,7 @@ O estado atual do programa se limita a algumas funcionalidades se comparado a es
 * método de comparação de bytes para buscar arquivos infectados
 * criação de threads com utilização de semáforos
 
+A limitação atual do antivirus é relacionada a inserção do comando para finalizar a leitura de arquivos através da palavra “fim” que quando digitada acarreta em uma terminação tardia do programa.
+
 O programa está sendo testado atualmente através da passagem de parâmetro através do terminal e com a passagem dos caminhos dos arquivos a serem
-analisados. Toda vez que o usuário digita o nome do arquivo desejeado, o próprio programa irá solicitar um novo caminho de arquivo a ser passado. Para dar início ao processo de verificação dos arquivos é necessário digitar a palavra "fim" sem aspas duplas no terminal e com isso o programa começará a realizar as verificações necessárias. Ao término do processamento das threads o programa irá retornar informações referentes a quantidade de arquivos analisados e infectados e o nome dos arquivos aonde a assinatura foi localizada.
+analisados. Toda vez que o usuário digita o nome do arquivo desejado, o próprio programa irá solicitar um novo caminho de arquivo a ser passado. Para dar início ao processo de verificação dos arquivos é necessário digitar a palavra "fim" sem aspas duplas no terminal e com isso o programa começará a realizar as verificações necessárias. Ao término do processamento das threads o programa irá retornar informações referentes a quantidade de arquivos analisados e infectados e o nome dos arquivos aonde a assinatura foi localizada.
